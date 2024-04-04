@@ -10,6 +10,8 @@ import usersRoutes from './api/v1/routes/userRoutes.js';
 import productRoutes from './api/v1/routes/productRoutes.js';
 import paymentRoutes from './api/v1/routes/paymentRoute.js';
 import orderRoutes from './api/v1/routes/orderRoutes.js';
+import servicesRoute from './api/v1/routes/servicesRoute.js';
+import bookingsRoute from './api/v1/routes/bookingsRoute.js';
 import Product from './api/v1/models/Product.js';
 
 // app config
@@ -36,6 +38,8 @@ app.use('/api/v1/EdPest-Cleaners/users', usersRoutes);
 app.use('/api/v1/EdPest-Cleaners/products', productRoutes);
 app.use('/api/v1/EdPest-Cleaners/pay', paymentRoutes);
 app.use('/api/v1/EdPest-Cleaners/order', orderRoutes);
+app.use('/api/v1/EdPest-Cleaners/services', servicesRoute);
+app.use('/api/v1/EdPest-Cleaners/bookings', bookingsRoute);
 
 // not found route
 app.use(notFound);

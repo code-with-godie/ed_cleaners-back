@@ -1,13 +1,14 @@
 import { StatusCodes } from 'http-status-codes';
+import axios from 'axios'
 // import NotFoundError from '../../../errors/not-found.js';
 // import BadRequestError from '../../../errors/bad-request.js';
 import Order from '../models/Order.js';
 export const createOrder = async (req, res, next) => {
+    console.log('creatig order');
     try {
         const {user:{userID:user}} = req;
          const order = await Order.create({...req.body,user});
-         req.order = order;
-         next();
+         return res.status(StatusCodes.CREATED).json({success:true,messege:'order created'})
     } catch (error) {
         next(error);
     }
@@ -29,6 +30,16 @@ export const getUserOrdersItems = async (req, res, next) => {
     } catch (error) {
         next(error);
     }
+};
+export const getReceipt = async (req, res, next) => {
+    const {params:{url}} = req
+    try {
+    const response = await axios.get(url);
+    res.send(response.data);
+  } catch (error) {
+    console.error('Error fetching Stripe content:', error);
+    res.status(500).send('Internal Server Error');
+  }
 };
 // export const getCategoryProducts = async (req, res, next) => {
 //     try {

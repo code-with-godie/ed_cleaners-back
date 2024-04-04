@@ -1,16 +1,19 @@
 import { StatusCodes } from 'http-status-codes'
 import Stripe from 'stripe'
-import Paypal from '@paypal/checkout-server-sdk'
-import paypal from 'paypal-rest-sdk'
+import paypal from '@paypal/checkout-server-sdk'
+// import paypal from 'paypal-rest-sdk'
 export const payWithStripe = async  (req,res,next)=>{
+    console.log(req.body);
     try {
         const stripe = new Stripe("sk_test_51OtYLvFx9vYQMEDvUJ35sGGO5eDM3Oi4XJ8h1KpxqeMx6NmQbX4Nnasc5u8BZWyMZqV1acQBLbaNWbY6rmjDvWhs001rLj272R");
         stripe.charges.create({
             source:req.body.tokenId,
             amount:req.body.amount,
-            currency:'usd'
+            currency:'usd',
+            receipt_email:req.body.email
         },(stripeError,stripeRes)=>{
             if(stripeError){
+                console.log('error',stripeError);
                return  res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({success:false,message:stripeError})
             }
             return  res.status(StatusCodes.OK).json({success:true,payment:stripeRes})
@@ -20,43 +23,34 @@ export const payWithStripe = async  (req,res,next)=>{
         next(error)
     }
 }
-export const payWithPaypalV2 = async (req,res,next)=>{
-    const {body:{total}} = req;
-    const amount = total / 100
-    console.log(amount);
-    try {
-    paypal.configure({
-  'mode': 'sandbox', //sandbox or live
-  'client_id':"Ac_V17-Uqu3rwRtmzfVrjeeodF0FpDljx7GggUxmW1p5api5SlZO7QSd8e63_Z_0M4n2fhuSvXncoEzR",
-  'client_secret':"EF1jnpGGuVa4og29v7zf283oRU74vOi7UqKfv9TdvC-9Ut7NRL2NuxS_v35KUfIyDgYgWtcguSE4cKIi"
+export const payWithPaypal = async (req,res,next)=>{
+    // Creating an environment
+let clientId = "Ac_V17-Uqu3rwRtmzfVrjeeodF0FpDljx7GggUxmW1p5api5SlZO7QSd8e63_Z_0M4n2fhuSvXncoEzR";
+let clientSecret = "EF1jnpGGuVa4og29v7zf283oRU74vOi7UqKfv9TdvC-9Ut7NRL2NuxS_v35KUfIyDgYgWtcguSE4cKIi";
+
+// This sample uses SandboxEnvironment. In production, use LiveEnvironment
+let environment = new paypal.core.SandboxEnvironment(clientId, clientSecret);
+let client = new paypal.core.PayPalHttpClient(environment);
+
+// Construct a request object and set desired parameters
+// Here, OrdersCreateRequest() creates a POST request to /v2/checkout/orders
+let request = new paypal.orders.OrdersCreateRequest();
+request.requestBody({
+    "intent": "CAPTURE",
+    "purchase_units": [
+        {
+            "amount": {
+                "currency_code": "USD",
+                "value": "100.00"
+            }
+        }
+     ]
 });
-let create_payment_json = {
-    "intent": "sale",
-    "payer": {
-        "payment_method": "paypal"
-    },
-    "redirect_urls": {
-        "return_url": "http://localhost:3000/success",
-        "cancel_url": "http://localhost:3000/failed"
-    },
-    "transactions": [{
-        "item_list": {
-            "items": [{
-                "name": "item",
-                "sku": "item",
-                "price": "1.00",
-                "currency": "USD",
-                "quantity": 1
-            }]
-        },
-        "amount": {
-            "currency": "USD",
-            "total": amount
-        },
-        "description": "pay ed_cleaners"
-    }]
-};
-paypal.payment.create(create_payment_json, function (error, payment) {
+    let response = await client.execute(request);
+    console.log(`Response: ${JSON.stringify(response)}`);
+    // If call returns body in response, you can get the deserialized version from the result attribute of the response.
+    console.log(`Order: ${JSON.stringify(response.result)}`);
+    paypal.payment.create(create_payment_json, function (error, payment) {
     if (error) {
         next(error)
         // throw error;
@@ -72,10 +66,8 @@ paypal.payment.create(create_payment_json, function (error, payment) {
         // res.json({payment})
     }
 });
-    } catch (error) {
-        next(error)
-    }
-}
+};
+    
 export const payWithPaypalV2GetOrder = async (req,res,next)=>{
     const {params:{orderID,payerID}} = req;
     console.log('trying getting order');
@@ -111,34 +103,34 @@ export const payWithPaypalV2GetOrder = async (req,res,next)=>{
         next(error)
     }
 }
-export const payWithPaypal = async  (req,res,next)=>{
-   try {
-        const request = new Paypal.orders.OrdersCreateRequest();
-        const PaypalClient = new Paypal.core.PayPalHttpClient(new Paypal.core.SandboxEnvironment("","ECtLDkH9cnJN2-s7gS4FS-2NtW8S4TQ3SWetQU7UvEclbDS8atUS0SHN5FElTOrtaRzKlWw40YNHRIHE"))
-         request.prefer('return=representation');
-        request.requestBody({
-        intent:'CAPTURE',
-        purchase_units:[
-            {
-                amount:{
-                    currency_code:'USD',
-                    value:100,
-                    // currency_code:'USD',
-                    // item_total:{
-                    //     currency_code:'USD',
-                    //     value:req.body.amount,
+// export const payWithPaypal = async  (req,res,next)=>{
+//    try {
+//         const request = new Paypal.orders.OrdersCreateRequest();
+//         const PaypalClient = new Paypal.core.PayPalHttpClient(new Paypal.core.SandboxEnvironment("","ECtLDkH9cnJN2-s7gS4FS-2NtW8S4TQ3SWetQU7UvEclbDS8atUS0SHN5FElTOrtaRzKlWw40YNHRIHE"))
+//          request.prefer('return=representation');
+//         request.requestBody({
+//         intent:'CAPTURE',
+//         purchase_units:[
+//             {
+//                 amount:{
+//                     currency_code:'USD',
+//                     value:100,
+//                     // currency_code:'USD',
+//                     // item_total:{
+//                     //     currency_code:'USD',
+//                     //     value:req.body.amount,
                         
-                    // }
-                }
-            }
-        ]
-    })
-    const order = await PaypalClient.execute(request);  
-    return res.json({success:true,id:order?.result?.id,order}) 
-    } catch (error) {
-        next(error)
-    }
-}
+//                     // }
+//                 }
+//             }
+//         ]
+//     })
+//     const order = await PaypalClient.execute(request);  
+//     return res.json({success:true,id:order?.result?.id,order}) 
+//     } catch (error) {
+//         next(error)
+//     }
+// }
 export const payWithMpesa = async  (req,res,next)=>{
     try {
         
